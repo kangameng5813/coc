@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Input Jawaban (HP)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    .btn-number {
+      width: 70px; height: 70px; border-radius: 50%;
+      background-color: #4472ca; color: #000; font-weight: 800;
+      font-size: 1.75rem; display: flex; align-items: center; justify-content: center;
+      user-select: none; transition: transform 0.1s, background-color 0.1s;
+    }
+    .btn-number:active { transform: scale(0.92); background-color: #3359a3; }
+
+    .btn-action {
+      width: 70px; height: 70px; border-radius: 12px; color: #000;
+      font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center;
+      user-select: none; transition: transform 0.1s;
+    }
+    .btn-action:active { transform: scale(0.92); }
+  </style>
+</head>
+<body class="bg-white min-h-screen flex flex-col items-center justify-center p-4 font-sans select-none">
+
+  <div class="w-full max-w-xs flex flex-col items-center">
+    <div class="w-full border-2 border-slate-700 rounded-2xl py-3 px-4 mb-8 text-center bg-white shadow-sm">
+      <span id="display-input" class="text-3xl font-extrabold tracking-wider text-black min-h-[40px] block"></span>
+    </div>
+
+    <div class="grid grid-cols-3 gap-y-6 gap-x-6 place-items-center mb-6">
+      <button type="button" onclick="appendNumber('1')" class="btn-number">1</button>
+      <button type="button" onclick="appendNumber('2')" class="btn-number">2</button>
+      <button type="button" onclick="appendNumber('3')" class="btn-number">3</button>
+
+      <button type="button" onclick="appendNumber('4')" class="btn-number">4</button>
+      <button type="button" onclick="appendNumber('5')" class="btn-number">5</button>
+      <button type="button" onclick="appendNumber('6')" class="btn-number">6</button>
+
+      <button type="button" onclick="appendNumber('7')" class="btn-number">7</button>
+      <button type="button" onclick="appendNumber('8')" class="btn-number">8</button>
+      <button type="button" onclick="appendNumber('9')" class="btn-number">9</button>
+
+      <button type="button" onclick="clearInput()" class="btn-action bg-red-600 text-black">hapus</button>
+      <button type="button" onclick="appendNumber('0')" class="btn-number">0</button>
+      <button type="button" onclick="submitAnswer()" class="btn-action bg-emerald-500 text-black">OK</button>
+    </div>
+
+    <p id="status-message" class="text-sm font-bold h-6 text-center"></p>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfT0bE5CfBIGvzsG_MCSkkKjnnaExlE0o",
+      authDomain: "coc-gurusmanj.firebaseapp.com",
+      databaseURL: "https://coc-gurusmanj-default-rtdb.firebaseio.com",
+      projectId: "coc-gurusmanj",
+      storageBucket: "coc-gurusmanj.firebasestorage.app",
+      messagingSenderId: "183089432197",
+      appId: "1:183089432197:web:67b413ee1ded658ba9cbec"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let questionsList = [];
+    let currentQ = 0;
+    let currentInputValue = "";
+
+    const displayEl = document.getElementById('display-input');
+    const statusEl = document.getElementById('status-message');
+
+    // Sinkronisasi soal aktif dan kunci jawaban dari server
+    db.ref('questions').on('value', (snapshot) => {
+      const data = snapshot.val();
+      questionsList = [];
+      if (data) {
+        for (let key in data) questionsList.push(data[key]);
+      }
+    });
+
+    db.ref('game/currentQuestion').on('value', (snapshot) => {
+      currentQ = snapshot.val() || 0;
+    });
+
+    function appendNumber(num) {
+      if (currentInputValue.length < 8) {
+        currentInputValue += num;
+        updateDisplay();
+      }
+    }
+
+    function clearInput() {
+      currentInputValue = "";
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      displayEl.innerText = currentInputValue;
+    }
+
+    function submitAnswer() {
+      if (!currentInputValue || questionsList.length === 0) return;
+
+      const correctAnswer = questionsList[currentQ]?.a;
+
+      if (currentInputValue.trim() === correctAnswer) {
+        statusEl.className = "text-sm font-bold text-center text-green-600";
+        statusEl.innerText = "Jawaban Benar!";
+        
+        db.ref('game').set({
+          currentQuestion: currentQ + 1,
+          lastResult: "CORRECT",
+          timestamp: Date.now()
+        });
+
+        clearInput();
+      } else {
+        statusEl.className = "text-sm font-bold text-center text-red-500";
+        statusEl.innerText = "Jawaban Salah! Coba lagi.";
+        
+        db.ref('game').update({
+          lastResult: "WRONG",
+          timestamp: Date.now()
+        });
+
+        clearInput();
+      }
+
+      setTimeout(() => { statusEl.innerText = ""; }, 1500);
+    }
+  </script>
+</body>
+</html>

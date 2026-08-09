@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layar Utama (Laptop)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- MathJax untuk Render Rumus Matematika -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    @keyframes pulse-banner {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .animate-pop { animation: pulse-banner 0.3s ease-out; }
+  </style>
+</head>
+<body class="bg-white text-blue-900 min-h-screen flex flex-col justify-between p-8 font-sans">
+
+  <header class="flex justify-between items-center border-b-2 border-blue-100 pb-4">
+    <h1 class="text-3xl font-extrabold text-blue-600 tracking-wide">Kuis Interaktif</h1>
+    
+    <div class="flex items-center gap-4">
+      <!-- Tombol Inisialisasi Audio -->
+      <button id="enable-audio-btn" onclick="enableAudio()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-full text-xs shadow-md transition flex items-center gap-1">
+        🔊 Aktifkan Suara
+      </button>
+
+      <div class="bg-blue-50 text-blue-800 font-bold px-4 py-2 rounded-full border border-blue-200">
+        Soal Ke: <span id="question-number" class="text-blue-600 text-xl">1</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col items-center justify-center my-6 text-center">
+    <div class="w-full max-w-3xl bg-blue-50/50 border-2 border-blue-200 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
+      
+      <div id="image-container" class="mb-4 hidden">
+        <img id="question-image" src="" alt="Gambar Soal" class="max-h-72 max-w-full rounded-xl border border-blue-200 shadow-md object-contain" />
+      </div>
+
+      <h2 id="question-text" class="text-2xl md:text-3xl font-bold text-blue-950 leading-relaxed">
+        Memuat Soal dari Server...
+      </h2>
+    </div>
+
+    <div id="notification-box" class="mt-6 h-16 flex items-center justify-center w-full max-w-md"></div>
+  </main>
+
+  <footer class="text-center text-blue-400 text-sm border-t border-blue-50 pt-4">
+    Gunakan HP Anda untuk memasukkan jawaban.
+  </footer>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfT0bE5CfBIGvzsG_MCSkkKjnnaExlE0o",
+      authDomain: "coc-gurusmanj.firebaseapp.com",
+      databaseURL: "https://coc-gurusmanj-default-rtdb.firebaseio.com",
+      projectId: "coc-gurusmanj",
+      storageBucket: "coc-gurusmanj.firebasestorage.app",
+      messagingSenderId: "183089432197",
+      appId: "1:183089432197:web:67b413ee1ded658ba9cbec"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 🎵 Inisialisasi Objek Audio MP3
+    const audioBenar = new Audio('benar.mp3');
+    const audioSalah = new Audio('salah.mp3');
+
+    function enableAudio() {
+      // Memancing izin browser dengan memutar & mempause audio sekali
+      audioBenar.play().then(() => {
+        audioBenar.pause();
+        audioBenar.currentTime = 0;
+      }).catch(e => console.log(e));
+
+      const btn = document.getElementById('enable-audio-btn');
+      btn.className = "bg-emerald-500 text-white font-bold px-4 py-2 rounded-full text-xs shadow-md transition flex items-center gap-1 cursor-default";
+      btn.innerText = "🔊 Suara Siap";
+      btn.onclick = null;
+    }
+
+    function playSound(type) {
+      if (type === 'CORRECT') {
+        audioBenar.currentTime = 0; // Reset ke awal jika dimainkan berulang
+        audioBenar.play().catch(e => console.log("Gagal memutar audio:", e));
+      } else if (type === 'WRONG') {
+        audioSalah.currentTime = 0; // Reset ke awal jika dimainkan berulang
+        audioSalah.play().catch(e => console.log("Gagal memutar audio:", e));
+      }
+    }
+
+    // Izinkan audio dipancing lewat klik di mana saja
+    window.addEventListener('click', () => {
+      enableAudio();
+    }, { once: true });
+
+    let questionsList = [];
+    let currentIndex = 0;
+
+    // Baca Soal dari Firebase
+    db.ref('questions').on('value', (snapshot) => {
+      const data = snapshot.val();
+      questionsList = [];
+      if (data) {
+        for (let key in data) questionsList.push(data[key]);
+      }
+      
+      db.ref('game').set({
+        currentQuestion: 0,
+        lastResult: "",
+        timestamp: Date.now()
+      });
+      showQuestion(0);
+    });
+
+    function showQuestion(index) {
+      const imgContainer = document.getElementById('image-container');
+      const imgEl = document.getElementById('question-image');
+      const textEl = document.getElementById('question-text');
+      const numEl = document.getElementById('question-number');
+
+      if (questionsList.length === 0) {
+        numEl.innerText = "-";
+        imgContainer.classList.add('hidden');
+        textEl.innerText = "Belum ada soal. Silakan tambah via Admin Panel!";
+        return;
+      }
+
+      if (index < questionsList.length) {
+        numEl.innerText = index + 1;
+        textEl.innerText = questionsList[index].q || "";
+
+        if (questionsList[index].img) {
+          imgEl.src = questionsList[index].img;
+          imgContainer.classList.remove('hidden');
+        } else {
+          imgContainer.classList.add('hidden');
+          imgEl.src = "";
+        }
+      } else {
+        numEl.innerText = "-";
+        imgContainer.classList.add('hidden');
+        textEl.innerText = "🎉 Permainan Selesai! Selamat!";
+      }
+
+      // Render ulang teks matematika menggunakan MathJax
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([textEl]);
+      }
+    }
+
+    // Listener jawaban dari HP
+    db.ref('game').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      const notifBox = document.getElementById('notification-box');
+
+      if (data.lastResult === "CORRECT") {
+        playSound('CORRECT');
+
+        notifBox.innerHTML = `
+          <div class="bg-blue-600 text-white font-bold text-xl px-8 py-3 rounded-xl shadow-lg animate-pop">
+            ✅ Jawaban Benar!
+          </div>`;
+        
+        setTimeout(() => {
+          notifBox.innerHTML = "";
+          currentIndex = data.currentQuestion;
+          showQuestion(currentIndex);
+        }, 1500);
+
+      } else if (data.lastResult === "WRONG") {
+        playSound('WRONG');
+
+        notifBox.innerHTML = `
+          <div class="bg-red-500 text-white font-bold text-xl px-8 py-3 rounded-xl shadow-lg animate-pop">
+            ❌ Jawaban Salah! Coba Lagi.
+          </div>`;
+
+        setTimeout(() => {
+          notifBox.innerHTML = "";
+        }, 1500);
+      }
+    });
+  </script>
+</body>
+</html>
