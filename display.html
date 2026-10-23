@@ -19,7 +19,6 @@
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
-    /* Background menyesuaikan warna tema pada gambar referensi */
     body {
       background: radial-gradient(circle at center, #1b333a 0%, #0d171c 100%);
       font-family: 'Times New Roman', Times, serif;
@@ -109,13 +108,11 @@
     function enableAudio() {
       if (audioUnlocked) return;
       
-      // Putar pedang.mp3 saat pertama kali diaktifkan/klik
       audioPedang.currentTime = 0;
       audioPedang.play().then(() => {
         audioUnlocked = true;
       }).catch(e => console.log("Audio play error:", e));
 
-      // Unlock juga audio benar & salah agar siap digunakan
       [audioBenar, audioSalah].forEach(aud => {
         aud.play().then(() => { aud.pause(); aud.currentTime = 0; }).catch(() => {});
       });
@@ -128,34 +125,44 @@
       }
     }
 
-    // Tangkap klik di mana saja untuk membuka overlay & memainkan pedang.mp3
     const overlay = document.getElementById('start-overlay');
     overlay.addEventListener('click', () => {
       enableAudio();
-
-      // Hilangkan overlay dengan transisi halus
       overlay.style.opacity = '0';
       setTimeout(() => {
         overlay.style.display = 'none';
       }, 300);
     });
 
-    let questionsList = [];
+    let questionsKeys = [];
+    let questionsData = {};
     let currentIndex = 0;
 
-    // Baca Daftar Soal dari Firebase (Tanpa mereset posisi saat refresh)
+    // 1. Ambil seluruh data soal dari Firebase dan simpan sebagai objek berdasar key uniknya
     db.ref('questions').on('value', (snapshot) => {
       const data = snapshot.val();
-      questionsList = [];
+      questionsKeys = [];
+      questionsData = {};
+      
       if (data) {
-        for (let key in data) questionsList.push(data[key]);
+        questionsData = data;
+        questionsKeys = Object.keys(data);
       }
       
-      // Ambil posisi soal saat ini dari database agar tidak reset ke 0 saat refresh
+      // Sinkronkan posisi soal aktif saat ini dari database agar tidak reset saat refresh
       db.ref('game/currentQuestion').once('value').then((snap) => {
-        currentIndex = snap.val() || 0;
+        currentIndex = snap.val() !== null ? snap.val() : 0;
         showQuestion(currentIndex);
       });
+    });
+
+    // 2. Listener perubahan posisi soal dari Firebase secara real-time
+    db.ref('game/currentQuestion').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val !== null && val !== currentIndex) {
+        currentIndex = val;
+        showQuestion(currentIndex);
+      }
     });
 
     function showQuestion(index) {
@@ -164,19 +171,41 @@
       const textEl = document.getElementById('question-text');
       const numEl = document.getElementById('question-number');
 
-      if (questionsList.length === 0) {
+      if (questionsKeys.length === 0) {
         numEl.innerText = "-";
         imgContainer.classList.add('hidden');
         textEl.innerText = "Belum ada soal. Silakan tambah via Admin Panel!";
         return;
       }
 
-      if (index < questionsList.length) {
-        numEl.innerText = index + 1;
-        textEl.innerText = questionsList[index].q || "";
+      if (index < questionsKeys.length) {
+        const currentKey = questionsKeys[index];
+        const questionItem = questionsData[currentKey];
 
-        if (questionsList[index].img) {
-          imgEl.src = questionsList[index].img;
+        // Cek apakah soal dinonaktifkan oleh admin (active === false)
+        if (questionItem.active === false) {
+          // Cari soal aktif berikutnya secara otomatis
+          let nextActiveIndex = index + 1;
+          while (nextActiveIndex < questionsKeys.length) {
+            if (questionsData[questionsKeys[nextActiveIndex]].active !== false) {
+              // Update posisi ke database agar sinkron
+              db.ref('game').update({ currentQuestion: nextActiveIndex });
+              return;
+            }
+            nextActiveIndex++;
+          }
+          // Jika tidak ada lagi soal aktif setelahnya
+          numEl.innerText = "-";
+          imgContainer.classList.add('hidden');
+          textEl.innerText = "Permainan Selesai/Belum dimulai";
+          return;
+        }
+
+        numEl.innerText = index + 1;
+        textEl.innerText = questionItem.q || "";
+
+        if (questionItem.img) {
+          imgEl.src = questionItem.img;
           imgContainer.classList.remove('hidden');
         } else {
           imgContainer.classList.add('hidden');
@@ -185,7 +214,7 @@
       } else {
         numEl.innerText = "-";
         imgContainer.classList.add('hidden');
-        textEl.innerText = "🎉 Permainan Selesai! Selamat!";
+        textEl.innerText = "Permainan Selesai/Belum dimulai";
       }
 
       // Render ulang teks matematika menggunakan MathJax
@@ -194,7 +223,7 @@
       }
     }
 
-    // Listener aktivitas permainan dari HP (Jawaban benar/salah)
+    // 3. Listener aktivitas permainan (Benar / Salah)
     db.ref('game').on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -202,7 +231,6 @@
       const notifBox = document.getElementById('notification-box');
 
       if (data.lastResult === "CORRECT") {
-        // 1. Putar suara BENAR terlebih dahulu
         audioBenar.currentTime = 0;
         audioBenar.play().catch(e => console.log("Gagal memutar audio:", e));
 
@@ -211,7 +239,6 @@
             ✅ Jawaban Benar!
           </div>`;
         
-        // 2. Setelah jeda singkat (misal 800ms atau saat notifikasi tampil), putar suara PEDANG saat ganti soal
         setTimeout(() => {
           audioPedang.currentTime = 0;
           audioPedang.play().catch(e => console.log("Gagal memutar audio:", e));
