@@ -7,52 +7,169 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
   <style>
-    .btn-number {
-      width: 70px; height: 70px; border-radius: 50%;
-      background-color: #4472ca; color: #000; font-weight: 800;
-      font-size: 1.75rem; display: flex; align-items: center; justify-content: center;
-      user-select: none; transition: transform 0.1s, background-color 0.1s;
+    /* Background bertema dark metal/slate teal seperti pada gambar */
+    body {
+      background: radial-gradient(circle at center, #1b333a 0%, #0d171c 100%);
+      font-family: 'Times New Roman', Times, serif;
     }
-    .btn-number:active { transform: scale(0.92); background-color: #3359a3; }
 
-    .btn-action {
-      width: 70px; height: 70px; border-radius: 12px; color: #000;
-      font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center;
-      user-select: none; transition: transform 0.1s;
+    /* Tampilan layar input angka */
+    .display-box {
+      background: linear-gradient(180deg, rgba(15,25,30,0.8) 0%, rgba(30,45,55,0.8) 100%);
+      border: 3px solid #7a8a9e;
+      box-shadow: inset 0 3px 8px rgba(0,0,0,0.8), 0 0 10px rgba(122,138,158,0.3);
+      color: #e2e8f0;
+      text-shadow: 0 0 8px rgba(255,255,255,0.6);
     }
-    .btn-action:active { transform: scale(0.92); }
+
+    /* Tombol melingkar bernuansa metallic 3D */
+    .btn-metal {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #7a8288 0%, #4a5056 50%, #26292d 100%);
+      border: 3px solid #9aa3ab;
+      box-shadow: 
+        inset 0 2px 3px rgba(255,255,255,0.6),
+        inset 0 -3px 5px rgba(0,0,0,0.8),
+        0 4px 8px rgba(0,0,0,0.6),
+        0 0 0 2px #1e2226;
+      color: #181c20;
+      font-family: 'Times New Roman', Times, serif;
+      font-weight: 900;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      cursor: pointer;
+      text-shadow: 1px 1px 0px rgba(255,255,255,0.3), -1px -1px 1px rgba(0,0,0,0.8);
+      transition: all 0.08s ease;
+      position: relative;
+    }
+
+    .btn-metal:active {
+      transform: translateY(2px) scale(0.95);
+      box-shadow: 
+        inset 0 3px 6px rgba(0,0,0,0.9),
+        0 1px 3px rgba(0,0,0,0.5);
+      background: radial-gradient(circle at 50% 50%, #3e4348 0%, #23272a 100%);
+    }
+
+    /* Ikon Khusus Tombol Hapus (Backspace) */
+    .icon-backspace {
+      display: inline-block;
+      width: 28px;
+      height: 20px;
+      background-color: #22252a;
+      clip-path: polygon(30% 0%, 100% 0%, 100% 100%, 30% 100%, 0% 50%);
+      position: relative;
+    }
+    .icon-backspace::after {
+      content: "✕";
+      color: #7a8288;
+      font-size: 11px;
+      font-weight: bold;
+      position: absolute;
+      right: 4px;
+      top: 1px;
+    }
+
+    /* Ikon Khusus Tombol Kirim (OK / Panah) */
+    .icon-send {
+      width: 0;
+      height: 0;
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      border-left: 20px solid #22252a;
+      margin-left: 4px;
+    }
   </style>
 </head>
-<body class="bg-white min-h-screen flex flex-col items-center justify-center p-4 font-sans select-none">
+<body class="min-h-screen flex flex-col items-center justify-center p-4 select-none relative">
+
+  <!-- Overlay Interaksi Pertama untuk Mengatasi Blokir Audio Browser -->
+  <div id="start-overlay" class="fixed inset-0 bg-[#0d171c]/95 z-50 flex flex-col items-center justify-center cursor-pointer text-center p-6 transition-opacity duration-300">
+    <div class="border-2 border-[#7a8a9e] bg-[#1b333a] p-8 rounded-2xl shadow-[0_0_20px_rgba(122,138,158,0.4)] max-w-sm w-full">
+      <div class="text-4xl mb-4">🔊</div>
+      <h2 class="text-white text-xl font-bold mb-2 tracking-wide">SIAPKAN AUDIO</h2>
+      <p class="text-[#9aa3ab] text-sm mb-6">Klik di mana saja untuk memulai permainan dan mengaktifkan suara.</p>
+      <button class="bg-[#7a8a9e] text-[#0d171c] font-extrabold px-6 py-3 rounded-xl tracking-wider shadow-md hover:bg-[#8fa0b5] transition">
+        KETUK UNTUK MULAI
+      </button>
+    </div>
+  </div>
 
   <div class="w-full max-w-xs flex flex-col items-center">
-    <div class="w-full border-2 border-slate-700 rounded-2xl py-3 px-4 mb-8 text-center bg-white shadow-sm">
-      <span id="display-input" class="text-3xl font-extrabold tracking-wider text-black min-h-[40px] block"></span>
+    
+    <!-- Display Output -->
+    <div class="w-full rounded-2xl py-3 px-4 mb-8 text-center display-box">
+      <span id="display-input" class="text-3xl font-extrabold tracking-widest min-h-[40px] block leading-relaxed"></span>
     </div>
 
-    <div class="grid grid-cols-3 gap-y-6 gap-x-6 place-items-center mb-6">
-      <button type="button" onclick="appendNumber('1')" class="btn-number">1</button>
-      <button type="button" onclick="appendNumber('2')" class="btn-number">2</button>
-      <button type="button" onclick="appendNumber('3')" class="btn-number">3</button>
+    <!-- Keypad Grid -->
+    <div class="grid grid-cols-3 gap-y-5 gap-x-5 place-items-center mb-6">
+      <button type="button" onclick="handleInput('1')" class="btn-metal">1</button>
+      <button type="button" onclick="handleInput('2')" class="btn-metal">2</button>
+      <button type="button" onclick="handleInput('3')" class="btn-metal">3</button>
 
-      <button type="button" onclick="appendNumber('4')" class="btn-number">4</button>
-      <button type="button" onclick="appendNumber('5')" class="btn-number">5</button>
-      <button type="button" onclick="appendNumber('6')" class="btn-number">6</button>
+      <button type="button" onclick="handleInput('4')" class="btn-metal">4</button>
+      <button type="button" onclick="handleInput('5')" class="btn-metal">5</button>
+      <button type="button" onclick="handleInput('6')" class="btn-metal">6</button>
 
-      <button type="button" onclick="appendNumber('7')" class="btn-number">7</button>
-      <button type="button" onclick="appendNumber('8')" class="btn-number">8</button>
-      <button type="button" onclick="appendNumber('9')" class="btn-number">9</button>
+      <button type="button" onclick="handleInput('7')" class="btn-metal">7</button>
+      <button type="button" onclick="handleInput('8')" class="btn-metal">8</button>
+      <button type="button" onclick="handleInput('9')" class="btn-metal">9</button>
 
-      <button type="button" onclick="clearInput()" class="btn-action bg-red-600 text-black">hapus</button>
-      <button type="button" onclick="appendNumber('0')" class="btn-number">0</button>
-      <button type="button" onclick="submitAnswer()" class="btn-action bg-emerald-500 text-black">OK</button>
+      <!-- Tombol Hapus (Backspace) -->
+      <button type="button" onclick="handleClear()" class="btn-metal">
+        <span class="icon-backspace"></span>
+      </button>
+      
+      <button type="button" onclick="handleInput('0')" class="btn-metal">0</button>
+      
+      <!-- Tombol OK / Submit -->
+      <button type="button" onclick="submitAnswer()" class="btn-metal">
+        <span class="icon-send"></span>
+      </button>
     </div>
 
-    <p id="status-message" class="text-sm font-bold h-6 text-center"></p>
+    <!-- Status Notifikasi -->
+    <p id="status-message" class="text-xl font-extrabold h-8 text-center tracking-wider text-shadow"></p>
   </div>
 
   <script>
+    // Audio Elements
+    const soundClick = new Audio('keyboard.mp3');
+    const soundBenar = new Audio('benar.mp3');
+    const soundSalah = new Audio('salah.mp3');
+
+    // Handle klik overlay pertama untuk membuka blokir audio browser
+    const overlay = document.getElementById('start-overlay');
+    overlay.addEventListener('click', () => {
+      // Unmute/preload dengan memutar lalu langsung di-pause sebentar (teknik unlock audio)
+      [soundClick, soundBenar, soundSalah].forEach(sound => {
+        sound.play().then(() => {
+          sound.pause();
+          sound.currentTime = 0;
+        }).catch(() => {});
+      });
+
+      // Hilangkan overlay dengan transisi halus
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 300);
+    });
+
+    function playClickSound() {
+      soundClick.currentTime = 0;
+      soundClick.play().catch(() => {});
+    }
+
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyAfT0bE5CfBIGvzsG_MCSkkKjnnaExlE0o",
       authDomain: "coc-gurusmanj.firebaseapp.com",
@@ -73,7 +190,7 @@
     const displayEl = document.getElementById('display-input');
     const statusEl = document.getElementById('status-message');
 
-    // Sinkronisasi soal aktif dan kunci jawaban dari server
+    // Sinkronisasi soal aktif dan kunci jawaban dari Firebase
     db.ref('questions').on('value', (snapshot) => {
       const data = snapshot.val();
       questionsList = [];
@@ -86,14 +203,16 @@
       currentQ = snapshot.val() || 0;
     });
 
-    function appendNumber(num) {
+    function handleInput(num) {
+      playClickSound();
       if (currentInputValue.length < 8) {
         currentInputValue += num;
         updateDisplay();
       }
     }
 
-    function clearInput() {
+    function handleClear() {
+      playClickSound();
       currentInputValue = "";
       updateDisplay();
     }
@@ -103,13 +222,18 @@
     }
 
     function submitAnswer() {
+      playClickSound();
       if (!currentInputValue || questionsList.length === 0) return;
 
       const correctAnswer = questionsList[currentQ]?.a;
 
-      if (currentInputValue.trim() === correctAnswer) {
-        statusEl.className = "text-sm font-bold text-center text-green-600";
-        statusEl.innerText = "Jawaban Benar!";
+      if (currentInputValue.trim() === String(correctAnswer)) {
+        // Notifikasi Benar
+        soundBenar.currentTime = 0;
+        soundBenar.play().catch(() => {});
+
+        statusEl.className = "text-xl font-extrabold text-center text-emerald-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]";
+        statusEl.innerText = "BENAR";
         
         db.ref('game').set({
           currentQuestion: currentQ + 1,
@@ -117,20 +241,26 @@
           timestamp: Date.now()
         });
 
-        clearInput();
+        currentInputValue = "";
+        updateDisplay();
       } else {
-        statusEl.className = "text-sm font-bold text-center text-red-500";
-        statusEl.innerText = "Jawaban Salah! Coba lagi.";
+        // Notifikasi Salah
+        soundSalah.currentTime = 0;
+        soundSalah.play().catch(() => {});
+
+        statusEl.className = "text-xl font-extrabold text-center text-red-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]";
+        statusEl.innerText = "SALAH";
         
         db.ref('game').update({
           lastResult: "WRONG",
           timestamp: Date.now()
         });
 
-        clearInput();
+        currentInputValue = "";
+        updateDisplay();
       }
 
-      setTimeout(() => { statusEl.innerText = ""; }, 1500);
+      setTimeout(() => { statusEl.innerText = ""; }, 1800);
     }
   </script>
 </body>
