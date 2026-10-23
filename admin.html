@@ -17,75 +17,83 @@
     };
   </script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    /* Background gradasi biru dongker khas Clash of Champions */
+    body {
+      background: radial-gradient(circle at center, #1b333a 0%, #0d171c 100%);
+      font-family: 'Times New Roman', Times, serif;
+    }
+  </style>
 </head>
-<body class="bg-blue-50 text-blue-900 min-h-screen p-6 font-sans">
+<body class="text-slate-200 min-h-screen p-6 font-sans">
 
   <!-- Form Login Admin -->
-  <div id="login-section" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-xl border border-blue-100">
-    <h2 class="text-2xl font-black text-center text-blue-800 mb-6">Login Admin Kuis</h2>
+  <div id="login-section" class="max-w-md mx-auto mt-20 bg-[#1b333a]/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-slate-700">
+    <h2 class="text-2xl font-black text-center text-teal-400 mb-6 tracking-wide">LOGIN ADMIN KUIS</h2>
     <form id="login-form" class="space-y-4">
       <div>
-        <label class="block text-sm font-bold text-slate-600 mb-1">Password Admin</label>
-        <input type="password" id="admin-pass" placeholder="Masukkan Password" class="w-full px-4 py-3 border border-blue-200 rounded-xl focus:outline-none focus:border-blue-600" required>
+        <label class="block text-sm font-bold text-slate-300 mb-1">Password Admin</label>
+        <input type="password" id="admin-pass" placeholder="Masukkan Password" class="w-full px-4 py-3 bg-[#0d171c] border border-slate-600 rounded-xl text-white focus:outline-none focus:border-teal-400" required>
       </div>
-      <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">Masuk Panel Admin</button>
-      <p id="login-error" class="text-red-500 text-sm font-bold text-center h-4"></p>
+      <button type="submit" class="w-full bg-teal-600 hover:bg-teal-500 text-black font-extrabold py-3 rounded-xl transition tracking-wider shadow-lg">MASUK PANEL ADMIN</button>
+      <p id="login-error" class="text-red-400 text-sm font-bold text-center h-4"></p>
     </form>
   </div>
 
   <!-- Panel Kelola Soal & Sistem -->
-  <div id="admin-dashboard" class="max-w-4xl mx-auto hidden">
-    <header class="flex flex-wrap justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-blue-100 gap-4">
+  <div id="admin-dashboard" class="max-w-5xl mx-auto hidden">
+    <header class="flex flex-wrap justify-between items-center mb-8 bg-[#1b333a]/90 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700 gap-4">
       <div>
-        <h1 class="text-2xl font-black text-blue-800">Panel Kelola Kuis</h1>
-        <p class="text-sm text-slate-500">Kelola soal, kontrol jalannya permainan, dan keamanan</p>
+        <h1 class="text-2xl font-black text-teal-400 tracking-wide">PANEL KELOLA KUIS</h1>
+        <p class="text-sm text-slate-400">Kelola soal, status aktif, kontrol permainan, dan keamanan</p>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="resetGame()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition">🔄 Reset Game (Soal 1)</button>
-        <button onclick="logoutAdmin()" class="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition">Logout</button>
+        <button onclick="resetGame()" class="bg-amber-500 hover:bg-amber-600 text-black font-extrabold px-4 py-2 rounded-xl text-sm transition shadow">🔄 Reset Game (Soal 1)</button>
+        <button onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-500 text-white font-extrabold px-4 py-2 rounded-xl text-sm transition shadow">Logout</button>
       </div>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Form Input & Edit Soal -->
       <div class="space-y-6 md:col-span-1">
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100">
-          <h3 id="form-title" class="text-lg font-bold text-blue-800 mb-4">Tambah Soal Baru</h3>
+        <div class="bg-[#1b333a]/90 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700">
+          <h3 id="form-title" class="text-lg font-bold text-teal-300 mb-4">Tambah Soal Baru</h3>
           <form id="question-form" class="space-y-4">
             <input type="hidden" id="edit-key-id" value="">
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Teks Pertanyaan</label>
-              <textarea id="input-text" placeholder="Contoh: Berapa hasil 12 + 5?" class="w-full px-3 py-2 border border-blue-200 rounded-xl focus:outline-none focus:border-blue-600 text-sm" rows="3"></textarea>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Teks Pertanyaan</label>
+              <textarea id="input-text" placeholder="Contoh: Berapa hasil 12 + 5?" class="w-full px-3 py-2 bg-[#0d171c] border border-slate-600 rounded-xl text-white focus:outline-none focus:border-teal-400 text-sm" rows="3"></textarea>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">URL Gambar (Opsional)</label>
-              <input type="url" id="input-img" placeholder="https://..." class="w-full px-3 py-2 border border-blue-200 rounded-xl focus:outline-none focus:border-blue-600 text-sm">
+              <label class="block text-xs font-bold text-slate-300 mb-1">URL Gambar (Opsional)</label>
+              <input type="url" id="input-img" placeholder="https://..." class="w-full px-3 py-2 bg-[#0d171c] border border-slate-600 rounded-xl text-white focus:outline-none focus:border-teal-400 text-sm">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Kunci Jawaban (Angka)</label>
-              <input type="text" id="input-answer" placeholder="Contoh: 17" class="w-full px-3 py-2 border border-blue-200 rounded-xl focus:outline-none focus:border-blue-600 text-sm" required>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Kunci Jawaban (Angka)</label>
+              <input type="text" id="input-answer" placeholder="Contoh: 17" class="w-full px-3 py-2 bg-[#0d171c] border border-slate-600 rounded-xl text-white focus:outline-none focus:border-teal-400 text-sm" required>
             </div>
             <div class="flex gap-2">
-              <button type="submit" id="submit-btn" class="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-xl text-sm hover:bg-emerald-700 transition">+ Simpan Soal</button>
-              <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden bg-slate-400 text-white font-bold px-3 py-2 rounded-xl text-sm">Batal</button>
+              <button type="submit" id="submit-btn" class="flex-1 bg-emerald-600 text-white font-extrabold py-2 rounded-xl text-sm hover:bg-emerald-500 transition shadow">+ Simpan Soal</button>
+              <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden bg-slate-600 text-white font-bold px-3 py-2 rounded-xl text-sm">Batal</button>
             </div>
           </form>
         </div>
 
         <!-- Form Pengaturan Password Admin -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100">
-          <h3 class="text-md font-bold text-blue-800 mb-3">🔑 Ganti Password Admin</h3>
+        <div class="bg-[#1b333a]/90 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700">
+          <h3 class="text-md font-bold text-teal-300 mb-3">🔑 Ganti Password Admin</h3>
           <form id="change-pass-form" class="space-y-3">
-            <input type="password" id="new-pass" placeholder="Password Baru" class="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm focus:outline-none focus:border-blue-600" required>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700 transition">Update Password</button>
+            <input type="password" id="new-pass" placeholder="Password Baru" class="w-full px-3 py-2 bg-[#0d171c] border border-slate-600 rounded-xl text-white text-sm focus:outline-none focus:border-teal-400" required>
+            <button type="submit" class="w-full bg-teal-600 hover:bg-teal-500 text-black font-extrabold py-2 rounded-xl text-xs transition">Update Password</button>
           </form>
-          <p id="pass-notif" class="text-xs font-bold text-emerald-600 mt-2 h-4"></p>
+          <p id="pass-notif" class="text-xs font-bold text-emerald-400 mt-2 h-4"></p>
         </div>
       </div>
 
       <!-- Daftar Soal -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 md:col-span-2">
-        <h3 class="text-lg font-bold text-blue-800 mb-4">Daftar Soal Tersimpan</h3>
+      <div class="bg-[#1b333a]/90 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700 md:col-span-2">
+        <h3 class="text-lg font-bold text-teal-300 mb-4">Daftar Soal Tersimpan</h3>
         <div id="questions-list" class="space-y-3 max-h-[580px] overflow-y-auto pr-2">
           <!-- Soal akan di-render di sini -->
         </div>
@@ -146,7 +154,18 @@
       }
     }
 
-    // Tambah/Update Soal
+    // Mulai permainan langsung dari index soal tertentu
+    function startFromQuestion(index) {
+      if (confirm(`Mulai permainan langsung dari Soal #${index + 1}?`)) {
+        db.ref('game').set({
+          currentQuestion: index,
+          lastResult: "",
+          timestamp: Date.now()
+        }).then(() => alert(`Game diset langsung ke Soal #${index + 1}!`));
+      }
+    }
+
+    // Tambah/Update Soal (Default active = true)
     document.getElementById('question-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const editKey = document.getElementById('edit-key-id').value;
@@ -154,14 +173,23 @@
       const img = document.getElementById('input-img').value;
       const answer = document.getElementById('input-answer').value.trim();
 
-      const payload = { q: text, img: img, a: answer };
-
       if (editKey) {
-        db.ref('questions/' + editKey).update(payload).then(() => resetForm());
+        db.ref('questions/' + editKey).once('value').then((snap) => {
+          const existing = snap.val() || {};
+          const payload = { q: text, img: img, a: answer, active: existing.active !== undefined ? existing.active : true };
+          db.ref('questions/' + editKey).update(payload).then(() => resetForm());
+        });
       } else {
+        const payload = { q: text, img: img, a: answer, active: true };
         db.ref('questions').push(payload).then(() => resetForm());
       }
     });
+
+    // Toggle status aktif/nonaktif soal
+    function toggleActive(key, currentStatus) {
+      const newStatus = currentStatus === false ? true : false;
+      db.ref('questions/' + key + '/active').set(newStatus);
+    }
 
     function editQuestion(key, q, img, a) {
       document.getElementById('edit-key-id').value = key;
@@ -207,28 +235,41 @@
           return;
         }
 
-        let index = 1;
+        let index = 0;
         for (let key in data) {
           const item = data[key];
+          const isActive = item.active !== false; // Default true jika belum ada property active
+          const currentIndex = index;
+          
           const div = document.createElement('div');
-          div.className = "flex justify-between items-center bg-blue-50/50 p-4 rounded-xl border border-blue-100 gap-2";
+          div.className = `flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-xl border gap-3 transition ${isActive ? 'bg-[#132228] border-slate-700' : 'bg-[#132228]/40 border-slate-800 opacity-60'}`;
           
           const safeQ = (item.q || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
           const safeImg = (item.img || "").replace(/'/g, "\\'");
           const safeA = (item.a || "").replace(/'/g, "\\'");
 
           div.innerHTML = `
-            <div class="space-y-1">
-              <span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Soal #${index++}</span>
-              <p class="font-bold text-sm text-blue-900">${item.q || '(Hanya Gambar)'}</p>
-              <p class="text-xs text-slate-500">Kunci: <strong class="text-emerald-600">${item.a}</strong></p>
+            <div class="space-y-1 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-teal-300 bg-teal-950 px-2 py-0.5 rounded-full border border-teal-800">Soal #${index + 1}</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">
+                  ${isActive ? 'Aktif' : 'Nonaktif'}
+                </span>
+              </div>
+              <p class="font-bold text-sm text-slate-100">${item.q || '(Hanya Gambar)'}</p>
+              <p class="text-xs text-slate-400">Kunci: <strong class="text-emerald-400">${item.a}</strong></p>
             </div>
-            <div class="flex items-center gap-2">
-              <button onclick="editQuestion('${key}', '${safeQ}', '${safeImg}', '${safeA}')" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">Edit</button>
-              <button onclick="deleteQuestion('${key}')" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">Hapus</button>
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+              <button onclick="startFromQuestion(${currentIndex})" class="bg-amber-600 hover:bg-amber-500 text-black text-xs font-extrabold px-3 py-1.5 rounded-lg transition shadow">▶ Mulai Soal Ini</button>
+              <button onclick="toggleActive('${key}', ${isActive})" class="${isActive ? 'bg-zinc-700 hover:bg-zinc-600' : 'bg-emerald-700 hover:bg-emerald-600'} text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                ${isActive ? 'Nonaktifkan' : 'Aktifkan'}
+              </button>
+              <button onclick="editQuestion('${key}', '${safeQ}', '${safeImg}', '${safeA}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">Edit</button>
+              <button onclick="deleteQuestion('${key}')" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">Hapus</button>
             </div>
           `;
           container.appendChild(div);
+          index++;
         }
 
         // Render ulang teks matematika di daftar soal menggunakan MathJax
