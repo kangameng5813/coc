@@ -19,6 +19,12 @@
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
+    /* Background menyesuaikan warna tema pada gambar referensi */
+    body {
+      background: radial-gradient(circle at center, #1b333a 0%, #0d171c 100%);
+      font-family: 'Times New Roman', Times, serif;
+    }
+
     @keyframes pulse-banner {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.03); }
@@ -26,31 +32,46 @@
     .animate-pop { animation: pulse-banner 0.3s ease-out; }
   </style>
 </head>
-<body class="bg-white text-blue-900 min-h-screen flex flex-col justify-between p-8 font-sans">
+<body class="text-slate-200 min-h-screen flex flex-col justify-between p-8 font-sans select-none relative">
 
-  <header class="flex justify-between items-center border-b-2 border-blue-100 pb-4">
-    <h1 class="text-3xl font-extrabold text-blue-600 tracking-wide">Kuis Interaktif</h1>
+  <!-- Overlay Interaksi Pertama (Klik di mana saja untuk mulai & putar pedang.mp3) -->
+  <div id="start-overlay" class="fixed inset-0 bg-[#0d171c]/95 z-50 flex flex-col items-center justify-center cursor-pointer text-center p-6 transition-opacity duration-300">
+    <div class="border-2 border-[#7a8a9e] bg-[#1b333a] p-8 rounded-2xl shadow-[0_0_20px_rgba(122,138,158,0.4)] max-w-sm w-full">
+      <div class="text-4xl mb-4">⚔️</div>
+      <h2 class="text-white text-xl font-bold mb-2 tracking-wide">CHAMPIONOF SMANJ@</h2>
+      <p class="text-[#9aa3ab] text-sm mb-6">Klik di mana saja untuk mulai permainan dan mengaktifkan suara.</p>
+      <button class="bg-[#7a8a9e] text-[#0d171c] font-extrabold px-6 py-3 rounded-xl tracking-wider shadow-md hover:bg-[#8fa0b5] transition">
+        KETUK UNTUK MULAI
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="flex justify-between items-center border-b-2 border-slate-700/50 pb-4">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl md:text-3xl font-extrabold text-teal-400 tracking-wider drop-shadow">championof SMANJ@</h1>
+    </div>
     
     <div class="flex items-center gap-4">
-      <!-- Tombol Inisialisasi Audio -->
-      <button id="enable-audio-btn" onclick="enableAudio()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-full text-xs shadow-md transition flex items-center gap-1">
+      <button id="enable-audio-btn" onclick="enableAudio()" class="bg-amber-500 hover:bg-amber-600 text-black font-bold px-4 py-2 rounded-full text-xs shadow-md transition flex items-center gap-1">
         🔊 Aktifkan Suara
       </button>
 
-      <div class="bg-blue-50 text-blue-800 font-bold px-4 py-2 rounded-full border border-blue-200">
-        Soal Ke: <span id="question-number" class="text-blue-600 text-xl">1</span>
+      <div class="bg-[#1b333a] text-teal-200 font-bold px-4 py-2 rounded-full border border-teal-500/40 shadow">
+        Soal Ke: <span id="question-number" class="text-teal-400 text-xl">1</span>
       </div>
     </div>
   </header>
 
+  <!-- Main Content -->
   <main class="flex-1 flex flex-col items-center justify-center my-6 text-center">
-    <div class="w-full max-w-3xl bg-blue-50/50 border-2 border-blue-200 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
+    <div class="w-full max-w-3xl bg-[#132228]/80 border-2 border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[300px] backdrop-blur-sm">
       
       <div id="image-container" class="mb-4 hidden">
-        <img id="question-image" src="" alt="Gambar Soal" class="max-h-72 max-w-full rounded-xl border border-blue-200 shadow-md object-contain" />
+        <img id="question-image" src="" alt="Gambar Soal" class="max-h-72 max-w-full rounded-xl border border-slate-600 shadow-md object-contain" />
       </div>
 
-      <h2 id="question-text" class="text-2xl md:text-3xl font-bold text-blue-950 leading-relaxed">
+      <h2 id="question-text" class="text-2xl md:text-3xl font-bold text-slate-100 leading-relaxed drop-shadow">
         Memuat Soal dari Server...
       </h2>
     </div>
@@ -58,8 +79,10 @@
     <div id="notification-box" class="mt-6 h-16 flex items-center justify-center w-full max-w-md"></div>
   </main>
 
-  <footer class="text-center text-blue-400 text-sm border-t border-blue-50 pt-4">
-    Gunakan HP Anda untuk memasukkan jawaban.
+  <!-- Footer / Watermark -->
+  <footer class="text-center text-slate-400 text-sm border-t border-slate-800 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+    <span>Gunakan HP Anda untuk memasukkan jawaban.</span>
+    <span class="text-teal-400/80 font-mono tracking-wider font-semibold">guru-smanj.blogspot.com</span>
   </footer>
 
   <script>
@@ -77,41 +100,50 @@
     const db = firebase.database();
 
     // 🎵 Inisialisasi Objek Audio MP3
+    const audioPedang = new Audio('pedang.mp3');
     const audioBenar = new Audio('benar.mp3');
     const audioSalah = new Audio('salah.mp3');
 
+    let audioUnlocked = false;
+
     function enableAudio() {
-      // Memancing izin browser dengan memutar & mempause audio sekali
-      audioBenar.play().then(() => {
-        audioBenar.pause();
-        audioBenar.currentTime = 0;
-      }).catch(e => console.log(e));
+      if (audioUnlocked) return;
+      
+      // Putar pedang.mp3 saat pertama kali diaktifkan/klik
+      audioPedang.currentTime = 0;
+      audioPedang.play().then(() => {
+        audioUnlocked = true;
+      }).catch(e => console.log("Audio play error:", e));
+
+      // Unlock juga audio benar & salah agar siap digunakan
+      [audioBenar, audioSalah].forEach(aud => {
+        aud.play().then(() => { aud.pause(); aud.currentTime = 0; }).catch(() => {});
+      });
 
       const btn = document.getElementById('enable-audio-btn');
-      btn.className = "bg-emerald-500 text-white font-bold px-4 py-2 rounded-full text-xs shadow-md transition flex items-center gap-1 cursor-default";
-      btn.innerText = "🔊 Suara Siap";
-      btn.onclick = null;
-    }
-
-    function playSound(type) {
-      if (type === 'CORRECT') {
-        audioBenar.currentTime = 0; // Reset ke awal jika dimainkan berulang
-        audioBenar.play().catch(e => console.log("Gagal memutar audio:", e));
-      } else if (type === 'WRONG') {
-        audioSalah.currentTime = 0; // Reset ke awal jika dimainkan berulang
-        audioSalah.play().catch(e => console.log("Gagal memutar audio:", e));
+      if (btn) {
+        btn.className = "bg-emerald-500 text-white font-bold px-4 py-2 rounded-full text-xs shadow-md transition flex items-center gap-1 cursor-default";
+        btn.innerText = "🔊 Suara Siap";
+        btn.onclick = null;
       }
     }
 
-    // Izinkan audio dipancing lewat klik di mana saja
-    window.addEventListener('click', () => {
+    // Tangkap klik di mana saja untuk membuka overlay & memainkan pedang.mp3
+    const overlay = document.getElementById('start-overlay');
+    overlay.addEventListener('click', () => {
       enableAudio();
-    }, { once: true });
+
+      // Hilangkan overlay dengan transisi halus
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 300);
+    });
 
     let questionsList = [];
     let currentIndex = 0;
 
-    // Baca Soal dari Firebase
+    // Baca Daftar Soal dari Firebase (Tanpa mereset posisi saat refresh)
     db.ref('questions').on('value', (snapshot) => {
       const data = snapshot.val();
       questionsList = [];
@@ -119,12 +151,11 @@
         for (let key in data) questionsList.push(data[key]);
       }
       
-      db.ref('game').set({
-        currentQuestion: 0,
-        lastResult: "",
-        timestamp: Date.now()
+      // Ambil posisi soal saat ini dari database agar tidak reset ke 0 saat refresh
+      db.ref('game/currentQuestion').once('value').then((snap) => {
+        currentIndex = snap.val() || 0;
+        showQuestion(currentIndex);
       });
-      showQuestion(0);
     });
 
     function showQuestion(index) {
@@ -163,7 +194,7 @@
       }
     }
 
-    // Listener jawaban dari HP
+    // Listener aktivitas permainan dari HP (Jawaban benar/salah)
     db.ref('game').on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -171,13 +202,21 @@
       const notifBox = document.getElementById('notification-box');
 
       if (data.lastResult === "CORRECT") {
-        playSound('CORRECT');
+        // 1. Putar suara BENAR terlebih dahulu
+        audioBenar.currentTime = 0;
+        audioBenar.play().catch(e => console.log("Gagal memutar audio:", e));
 
         notifBox.innerHTML = `
-          <div class="bg-blue-600 text-white font-bold text-xl px-8 py-3 rounded-xl shadow-lg animate-pop">
+          <div class="bg-emerald-600 text-white font-bold text-xl px-8 py-3 rounded-xl shadow-lg animate-pop">
             ✅ Jawaban Benar!
           </div>`;
         
+        // 2. Setelah jeda singkat (misal 800ms atau saat notifikasi tampil), putar suara PEDANG saat ganti soal
+        setTimeout(() => {
+          audioPedang.currentTime = 0;
+          audioPedang.play().catch(e => console.log("Gagal memutar audio:", e));
+        }, 700);
+
         setTimeout(() => {
           notifBox.innerHTML = "";
           currentIndex = data.currentQuestion;
@@ -185,10 +224,11 @@
         }, 1500);
 
       } else if (data.lastResult === "WRONG") {
-        playSound('WRONG');
+        audioSalah.currentTime = 0;
+        audioSalah.play().catch(e => console.log("Gagal memutar audio:", e));
 
         notifBox.innerHTML = `
-          <div class="bg-red-500 text-white font-bold text-xl px-8 py-3 rounded-xl shadow-lg animate-pop">
+          <div class="bg-red-600 text-white font-bold text-xl px-8 py-3 rounded-xl shadow-lg animate-pop">
             ❌ Jawaban Salah! Coba Lagi.
           </div>`;
 
