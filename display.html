@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Layar Utama</title>
+  <title>DISPLAY</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -33,7 +33,7 @@
 </head>
 <body class="text-slate-200 min-h-screen flex flex-col justify-between p-8 font-sans select-none relative">
 
-  <!-- Overlay Interaksi Pertama (Klik di mana saja untuk mulai & putar pedang.mp3) -->
+  <!-- Overlay Interaksi Pertama -->
   <div id="start-overlay" class="fixed inset-0 bg-[#0d171c]/95 z-50 flex flex-col items-center justify-center cursor-pointer text-center p-6 transition-opacity duration-300">
     <div class="border-2 border-[#7a8a9e] bg-[#1b333a] p-8 rounded-2xl shadow-[0_0_20px_rgba(122,138,158,0.4)] max-w-sm w-full">
       <div class="text-4xl mb-4">⚔️</div>
@@ -71,7 +71,7 @@
       </div>
 
       <h2 id="question-text" class="text-2xl md:text-3xl font-bold text-slate-100 leading-relaxed drop-shadow">
-        Memuat Soal dari Server...
+        Menyiapkan Permainan...
       </h2>
     </div>
 
@@ -99,14 +99,26 @@
     const db = firebase.database();
 
     // 🎵 Inisialisasi Objek Audio MP3
+    const audioBacksound = new Audio('back_sound.mp3');
+    audioBacksound.loop = true;
+
+    const audioSelamatDatang = new Audio('selamat_datang.mp3');
     const audioPedang = new Audio('pedang.mp3');
     const audioBenar = new Audio('benar.mp3');
     const audioSalah = new Audio('salah.mp3');
 
     let audioUnlocked = false;
+    let gameStarted = false;
+    let questionsKeys = [];
+    let questionsData = {};
+    let currentIndex = 0;
 
     function enableAudio() {
       if (audioUnlocked) return;
+      
+      // Putar backsound & selamat datang
+      audioBacksound.play().catch(e => console.log("Backsound error:", e));
+      audioSelamatDatang.play().catch(e => console.log("Selamat datang error:", e));
       
       audioPedang.currentTime = 0;
       audioPedang.play().then(() => {
@@ -131,14 +143,19 @@
       overlay.style.opacity = '0';
       setTimeout(() => {
         overlay.style.display = 'none';
+        
+        // Mulai hitung mundur 15 detik setelah layar diklik/overlay ditutup
+        document.getElementById('question-text').innerText = "Bersiap... Menyambut peserta!";
+        
+        setTimeout(() => {
+          gameStarted = true;
+          loadAndShowCurrentQuestion();
+        }, 15000); // Penundaan 15 detik (sesuai durasi selamat_datang.mp3)
+
       }, 300);
     });
 
-    let questionsKeys = [];
-    let questionsData = {};
-    let currentIndex = 0;
-
-    // 1. Ambil seluruh data soal dari Firebase dan simpan sebagai objek berdasar key uniknya
+    // Baca seluruh data soal dan kunci uniknya dari Firebase
     db.ref('questions').on('value', (snapshot) => {
       const data = snapshot.val();
       questionsKeys = [];
@@ -149,21 +166,30 @@
         questionsKeys = Object.keys(data);
       }
       
-      // Sinkronkan posisi soal aktif saat ini dari database agar tidak reset saat refresh
       db.ref('game/currentQuestion').once('value').then((snap) => {
         currentIndex = snap.val() !== null ? snap.val() : 0;
-        showQuestion(currentIndex);
+        if (gameStarted) {
+          showQuestion(currentIndex);
+        }
       });
     });
 
-    // 2. Listener perubahan posisi soal dari Firebase secara real-time
     db.ref('game/currentQuestion').on('value', (snapshot) => {
       const val = snapshot.val();
       if (val !== null && val !== currentIndex) {
         currentIndex = val;
-        showQuestion(currentIndex);
+        if (gameStarted) {
+          showQuestion(currentIndex);
+        }
       }
     });
+
+    function loadAndShowCurrentQuestion() {
+      db.ref('game/currentQuestion').once('value').then((snap) => {
+        currentIndex = snap.val() !== null ? snap.val() : 0;
+        showQuestion(currentIndex);
+      });
+    }
 
     function showQuestion(index) {
       const imgContainer = document.getElementById('image-container');
@@ -182,22 +208,20 @@
         const currentKey = questionsKeys[index];
         const questionItem = questionsData[currentKey];
 
-        // Cek apakah soal dinonaktifkan oleh admin (active === false)
+        // Jika soal dinonaktifkan oleh admin (active === false), cari soal aktif berikutnya
         if (questionItem.active === false) {
-          // Cari soal aktif berikutnya secara otomatis
           let nextActiveIndex = index + 1;
           while (nextActiveIndex < questionsKeys.length) {
             if (questionsData[questionsKeys[nextActiveIndex]].active !== false) {
-              // Update posisi ke database agar sinkron
               db.ref('game').update({ currentQuestion: nextActiveIndex });
               return;
             }
             nextActiveIndex++;
           }
-          // Jika tidak ada lagi soal aktif setelahnya
           numEl.innerText = "-";
           imgContainer.classList.add('hidden');
-          textEl.innerText = "Permainan Selesai/Belum dimulai";
+          textEl.innerText = "Permainan Selesai/belum siap!";
+          audioBacksound.pause();
           return;
         }
 
@@ -214,16 +238,16 @@
       } else {
         numEl.innerText = "-";
         imgContainer.classList.add('hidden');
-        textEl.innerText = "Permainan Selesai/Belum dimulai";
+        textEl.innerText = "Permainan Selesai/Belum Siap";
+        audioBacksound.pause();
       }
 
-      // Render ulang teks matematika menggunakan MathJax
       if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([textEl]);
       }
     }
 
-    // 3. Listener aktivitas permainan (Benar / Salah)
+    // Listener aktivitas permainan (Benar / Salah)
     db.ref('game').on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -247,7 +271,9 @@
         setTimeout(() => {
           notifBox.innerHTML = "";
           currentIndex = data.currentQuestion;
-          showQuestion(currentIndex);
+          if (gameStarted) {
+            showQuestion(currentIndex);
+          }
         }, 1500);
 
       } else if (data.lastResult === "WRONG") {
